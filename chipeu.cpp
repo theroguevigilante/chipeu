@@ -20,11 +20,14 @@ void chipeu::emulateCycle(){
                         for(int i = 0; i < 2048; ++i){
                             gfx[i] = 0;
                         }
+                        break;
                     case 0x000E:
                         --sp;
+                        break;
                     default:
                         std::cout << "Unknown opcode [0x" << std::hex << opcode << "]" << std::endl;
                 }
+                break;
         }
     }
 };
