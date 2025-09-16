@@ -1,3 +1,5 @@
+#include <fstream>
+
 // chip8_fontset each character is 5 bytes
 unsigned char chip8_fontset[80] = { 
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -28,7 +30,21 @@ class chipeu {
             }
         }
         void emulateCycle();
-        void loadRom(const char* filename);
+        void loadRom(const char* filename){
+            std::ifstream file(filename, std::ios::binary | std::ios::ate);
+            if (file.is_open()){
+                std::streampos size = file.tellg();
+                char* buffer = new char[size];
+
+                file.seekg(0, std::ios::beg);
+                file.read(buffer, size);
+                file.close();
+                for (long i = 0; i < size; ++i){
+                    memory[0x200 + i ] = buffer[i];
+                }
+                delete[] buffer;
+            }
+        };
     private:
         // 2 bytes for an opcode
         unsigned short opcode{};
