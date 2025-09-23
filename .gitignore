@@ -1,2 +1,5 @@
 chipeu
 log*
+build/
+*.obj
+*.exp

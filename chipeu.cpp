@@ -10,6 +10,7 @@ chipeu::chipeu() : pc (0x200){
     }
 }
 
+
 void chipeu::emulateCycle(){
     opcode = memory[pc] << 8 | memory[pc+1];
     unsigned char x{}, y{}, kk{};
@@ -213,22 +214,55 @@ void chipeu::emulateCycle(){
     }
 }
 
-void chipeu::loadRom(const char* filename){
+void chipeu::loadRom(const char* filename) {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    if (file.is_open()){
-        std::streampos size = file.tellg();
-        char* buffer = new char[size];
-
-        file.seekg(0, std::ios::beg);
-        file.read(buffer, size);
-        file.close();
-        if (size<=0xE00){
-            for (long i = 0; i < size; ++i){
-                memory[0x200 + i ] = buffer[i];
-            } 
-        }
-        delete[] buffer;
+    if (!file.is_open()) {
+        std::cerr << "Failed to open ROM: " << filename << std::endl;
+        return;
     }
+
+    std::streamsize size = file.tellg();
+    if (size <= 0 || size > 0xE00) {
+        std::cerr << "Invalid ROM size: " << size << std::endl;
+        file.close();
+        return;
+    }
+
+    file.seekg(0, std::ios::beg);
+    char* buffer = new char[size];
+    if (!file.read(buffer, size)) {
+        std::cerr << "Failed to read ROM data." << std::endl;
+        delete[] buffer;
+        file.close();
+        return;
+    }
+    file.close();
+
+    // Reset emulator state
+    pc = 0x200;
+    I = 0;
+    sp = 0;
+    delay_timer = 0;
+    sound_timer = 0;
+    drawflag = false;
+
+    std::fill(std::begin(V), std::end(V), 0);
+    std::fill(std::begin(stack), std::end(stack), 0);
+    std::fill(std::begin(gfx), std::end(gfx), 0);
+    std::fill(std::begin(key), std::end(key), 0);
+    std::fill(memory + 0x200, memory + 4096, 0);  // Clear program area
+
+    // Reload fontset
+    for (int i = 0; i < 80; ++i) {
+        memory[i] = chip8_fontset[i];
+    }
+
+    // Load ROM into memory
+    for (std::streamsize i = 0; i < size; ++i) {
+        memory[0x200 + i] = static_cast<unsigned char>(buffer[i]);
+    }
+
+    delete[] buffer;
 }
 
 const bool chipeu::getDraw() const{
